@@ -15,9 +15,9 @@ const createBooking = (req, res) => {
       });
     }
     
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Email validation - using simple check to avoid ReDoS
+    // More robust validation can be done with libraries like validator.js in production
+    if (!email || !email.includes('@') || !email.includes('.') || email.length > 254) {
       return res.status(400).json({
         success: false,
         message: 'Invalid email format'

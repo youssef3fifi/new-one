@@ -22,6 +22,8 @@ const PORT = process.env.PORT || 5000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 // Middleware
+// NOTE: CORS is set to allow all origins (*) for demo/development purposes and AWS EC2 deployment
+// In production, replace CORS_ORIGIN with specific domain(s) for security
 app.use(cors({
   origin: CORS_ORIGIN,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
