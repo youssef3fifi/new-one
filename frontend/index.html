@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Booking System - Home</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">🏨 HotelBooking</a>
+      <ul class="navbar-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="packages.html">Browse Packages</a></li>
+        <li><a href="booking.html">Book Now</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h1>Discover Your Perfect Stay</h1>
+      <p>Book luxury hotels around the world at unbeatable prices</p>
+      
+      <div class="search-box">
+        <form class="search-form" id="searchForm">
+          <div class="form-group">
+            <label for="destination">Destination</label>
+            <input type="text" id="destination" class="form-control" placeholder="Where to?">
+          </div>
+          <div class="form-group">
+            <label for="checkIn">Check-in</label>
+            <input type="date" id="checkIn" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="checkOut">Check-out</label>
+            <input type="date" id="checkOut" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="guests">Guests</label>
+            <input type="number" id="guests" class="form-control" min="1" value="2">
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn btn-primary btn-block">Search Hotels</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Packages Section -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Featured Hotel Packages</h2>
+      <div id="featuredPackages" class="packages-grid">
+        <!-- Loading spinner will be shown here -->
+      </div>
+      <div class="text-center mt-2">
+        <a href="packages.html" class="btn btn-primary">View All Packages</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose Us Section -->
+  <section class="section" style="background-color: var(--light-color);">
+    <div class="container">
+      <h2 class="section-title">Why Choose Us</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+        <div style="text-align: center; padding: 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🌍</div>
+          <h3>Global Coverage</h3>
+          <p style="color: var(--text-light);">Hotels in major cities worldwide</p>
+        </div>
+        <div style="text-align: center; padding: 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">💰</div>
+          <h3>Best Prices</h3>
+          <p style="color: var(--text-light);">Competitive rates guaranteed</p>
+        </div>
+        <div style="text-align: center; padding: 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">⭐</div>
+          <h3>Top Quality</h3>
+          <p style="color: var(--text-light);">Handpicked luxury hotels</p>
+        </div>
+        <div style="text-align: center; padding: 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🛡️</div>
+          <h3>Secure Booking</h3>
+          <p style="color: var(--text-light);">Safe and reliable reservations</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>About Us</h3>
+          <p>Your trusted partner for luxury hotel bookings worldwide.</p>
+        </div>
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="packages.html">Packages</a></li>
+            <li><a href="booking.html">Book Now</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Contact</h3>
+          <p>Email: info@hotelbooking.com</p>
+          <p>Phone: +1 (555) 123-4567</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 Hotel Booking System. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { packagesAPI } from './js/api.js';
+    import { showToast, showLoading, formatCurrency } from './js/main.js';
+
+    // Load featured packages on page load
+    async function loadFeaturedPackages() {
+      const container = document.getElementById('featuredPackages');
+      showLoading(container);
+
+      try {
+        const response = await packagesAPI.getAll();
+        const packages = response.data.slice(0, 3); // Show only 3 featured packages
+        
+        container.innerHTML = packages.map(pkg => `
+          <div class="package-card" onclick="window.location.href='packages.html?id=${pkg.id}'">
+            <img src="${pkg.image}" alt="${pkg.name}" class="package-image">
+            <div class="package-content">
+              <div class="package-header">
+                <div>
+                  <h3 class="package-name">${pkg.name}</h3>
+                  <p class="package-location">📍 ${pkg.location}</p>
+                </div>
+                <div class="package-price">
+                  ${formatCurrency(pkg.price)}
+                  <span>/night</span>
+                </div>
+              </div>
+              <div class="package-rating">
+                <span class="stars">⭐</span>
+                <span>${pkg.rating}/5.0</span>
+              </div>
+              <p class="package-description">${pkg.description.substring(0, 100)}...</p>
+              <div class="package-amenities">
+                ${pkg.amenities.slice(0, 3).map(amenity => `<span class="amenity-tag">${amenity}</span>`).join('')}
+              </div>
+              <a href="booking.html?packageId=${pkg.id}" class="btn btn-primary btn-block" onclick="event.stopPropagation()">Book Now</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        container.innerHTML = '<p style="text-align: center; color: var(--danger-color);">Error loading packages. Please try again later.</p>';
+        showToast('Error loading packages', 'error');
+        console.error('Error:', error);
+      }
+    }
+
+    // Handle search form
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const destination = document.getElementById('destination').value;
+      window.location.href = `packages.html?location=${encodeURIComponent(destination)}`;
+    });
+
+    // Set minimum dates for check-in and check-out
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('checkIn').setAttribute('min', today);
+    document.getElementById('checkOut').setAttribute('min', today);
+
+    // Initialize
+    loadFeaturedPackages();
+  </script>
+</body>
+</html>
