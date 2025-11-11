@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Hotel Packages - Hotel Booking System</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">🏨 HotelBooking</a>
+      <ul class="navbar-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="packages.html">Browse Packages</a></li>
+        <li><a href="booking.html">Book Now</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <section class="hero" style="padding: 40px 0;">
+    <div class="container">
+      <h1>Browse Hotel Packages</h1>
+      <p>Discover amazing hotels around the world</p>
+    </div>
+  </section>
+
+  <!-- Filters Section -->
+  <section class="section">
+    <div class="container">
+      <div class="filters">
+        <form class="filters-form" id="filterForm">
+          <div class="form-group">
+            <label for="filterLocation">Location</label>
+            <input type="text" id="filterLocation" class="form-control" placeholder="Search by location">
+          </div>
+          <div class="form-group">
+            <label for="filterMinPrice">Min Price</label>
+            <input type="number" id="filterMinPrice" class="form-control" placeholder="$0" min="0">
+          </div>
+          <div class="form-group">
+            <label for="filterMaxPrice">Max Price</label>
+            <input type="number" id="filterMaxPrice" class="form-control" placeholder="$5000" min="0">
+          </div>
+          <div class="form-group">
+            <label for="filterRating">Min Rating</label>
+            <select id="filterRating" class="form-control">
+              <option value="">All Ratings</option>
+              <option value="4.5">4.5+ ⭐</option>
+              <option value="4.0">4.0+ ⭐</option>
+              <option value="3.5">3.5+ ⭐</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="button" class="btn btn-secondary btn-block" id="clearFilters">Clear Filters</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Results Count -->
+      <div id="resultsCount" style="margin-bottom: 1rem; color: var(--text-light);"></div>
+
+      <!-- Packages Grid -->
+      <div id="packagesContainer" class="packages-grid">
+        <!-- Packages will be loaded here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>About Us</h3>
+          <p>Your trusted partner for luxury hotel bookings worldwide.</p>
+        </div>
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="packages.html">Packages</a></li>
+            <li><a href="booking.html">Book Now</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Contact</h3>
+          <p>Email: info@hotelbooking.com</p>
+          <p>Phone: +1 (555) 123-4567</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 Hotel Booking System. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { packagesAPI } from './js/api.js';
+    import { showToast, showLoading, formatCurrency } from './js/main.js';
+
+    let allPackages = [];
+
+    // Load all packages
+    async function loadPackages(filters = {}) {
+      const container = document.getElementById('packagesContainer');
+      const resultsCount = document.getElementById('resultsCount');
+      showLoading(container);
+
+      try {
+        const response = await packagesAPI.getAll(filters);
+        allPackages = response.data;
+        
+        resultsCount.textContent = `Found ${allPackages.length} hotel${allPackages.length !== 1 ? 's' : ''}`;
+        
+        if (allPackages.length === 0) {
+          container.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">
+              <p style="font-size: 1.2rem; color: var(--text-light);">No packages found matching your criteria.</p>
+              <button class="btn btn-primary mt-1" onclick="location.reload()">View All Packages</button>
+            </div>
+          `;
+          return;
+        }
+        
+        container.innerHTML = allPackages.map(pkg => `
+          <div class="package-card" onclick="showPackageDetails(${pkg.id})">
+            <img src="${pkg.image}" alt="${pkg.name}" class="package-image">
+            <div class="package-content">
+              <div class="package-header">
+                <div>
+                  <h3 class="package-name">${pkg.name}</h3>
+                  <p class="package-location">📍 ${pkg.location}</p>
+                </div>
+                <div class="package-price">
+                  ${formatCurrency(pkg.price)}
+                  <span>/night</span>
+                </div>
+              </div>
+              <div class="package-rating">
+                <span class="stars">⭐</span>
+                <span>${pkg.rating}/5.0</span>
+              </div>
+              <p class="package-description">${pkg.description}</p>
+              <div class="package-amenities">
+                ${pkg.amenities.map(amenity => `<span class="amenity-tag">${amenity}</span>`).join('')}
+              </div>
+              <a href="booking.html?packageId=${pkg.id}" class="btn btn-primary btn-block" onclick="event.stopPropagation()">Book Now</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        container.innerHTML = '<p style="text-align: center; color: var(--danger-color); grid-column: 1/-1;">Error loading packages. Please try again later.</p>';
+        showToast('Error loading packages', 'error');
+        console.error('Error:', error);
+      }
+    }
+
+    // Show package details (could be expanded to a modal)
+    window.showPackageDetails = function(packageId) {
+      const pkg = allPackages.find(p => p.id === packageId);
+      if (pkg) {
+        alert(`${pkg.name}\n\nLocation: ${pkg.location}\nPrice: ${formatCurrency(pkg.price)}/night\nRating: ${pkg.rating}/5.0\n\n${pkg.description}\n\nAmenities:\n${pkg.amenities.join('\n')}`);
+      }
+    };
+
+    // Handle filter form
+    document.getElementById('filterForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const filters = {};
+      const location = document.getElementById('filterLocation').value;
+      const minPrice = document.getElementById('filterMinPrice').value;
+      const maxPrice = document.getElementById('filterMaxPrice').value;
+      const minRating = document.getElementById('filterRating').value;
+      
+      if (location) filters.location = location;
+      if (minPrice) filters.minPrice = minPrice;
+      if (maxPrice) filters.maxPrice = maxPrice;
+      if (minRating) filters.minRating = minRating;
+      
+      loadPackages(filters);
+    });
+
+    // Clear filters
+    document.getElementById('clearFilters').addEventListener('click', () => {
+      document.getElementById('filterForm').reset();
+      loadPackages();
+    });
+
+    // Check for URL parameters (from home page search)
+    const urlParams = new URLSearchParams(window.location.search);
+    const locationParam = urlParams.get('location');
+    if (locationParam) {
+      document.getElementById('filterLocation').value = locationParam;
+      loadPackages({ location: locationParam });
+    } else {
+      loadPackages();
+    }
+  </script>
+</body>
+</html>

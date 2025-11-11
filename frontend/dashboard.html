@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bookings - Hotel Booking System</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">🏨 HotelBooking</a>
+      <ul class="navbar-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="packages.html">Browse Packages</a></li>
+        <li><a href="booking.html">Book Now</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Dashboard Header -->
+  <section class="dashboard-header">
+    <div class="container">
+      <h1>My Bookings</h1>
+      <p>View and manage your hotel reservations</p>
+    </div>
+  </section>
+
+  <!-- Email Input Section (if not provided in URL) -->
+  <section class="section" id="emailInputSection" style="display: none;">
+    <div class="container">
+      <div style="max-width: 500px; margin: 0 auto;">
+        <h2 style="margin-bottom: 1rem;">Enter Your Email</h2>
+        <p style="margin-bottom: 1.5rem; color: var(--text-light);">Enter the email address you used when making your bookings</p>
+        <form id="emailForm">
+          <div class="form-group">
+            <label for="userEmail">Email Address</label>
+            <input type="email" id="userEmail" class="form-control" required placeholder="your@email.com">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">View My Bookings</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bookings Section -->
+  <section class="section" id="bookingsSection" style="display: none;">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+          <h2>Your Reservations</h2>
+          <p id="bookingsEmail" style="color: var(--text-light);"></p>
+        </div>
+        <div>
+          <button class="btn btn-secondary" onclick="changeEmail()">Change Email</button>
+          <a href="booking.html" class="btn btn-primary">New Booking</a>
+        </div>
+      </div>
+
+      <div id="bookingsContainer" class="bookings-list">
+        <!-- Bookings will be loaded here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>About Us</h3>
+          <p>Your trusted partner for luxury hotel bookings worldwide.</p>
+        </div>
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="packages.html">Packages</a></li>
+            <li><a href="booking.html">Book Now</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Contact</h3>
+          <p>Email: info@hotelbooking.com</p>
+          <p>Phone: +1 (555) 123-4567</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 Hotel Booking System. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { bookingsAPI, packagesAPI } from './js/api.js';
+    import { showToast, showLoading, formatCurrency, formatDate } from './js/main.js';
+
+    let currentEmail = '';
+    let packages = [];
+
+    // Load packages for reference
+    async function loadPackages() {
+      try {
+        const response = await packagesAPI.getAll();
+        packages = response.data;
+      } catch (error) {
+        console.error('Error loading packages:', error);
+      }
+    }
+
+    // Load bookings by email
+    async function loadBookings(email) {
+      const container = document.getElementById('bookingsContainer');
+      showLoading(container);
+
+      try {
+        const response = await bookingsAPI.getAll({ email });
+        const bookings = response.data;
+
+        if (bookings.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 3rem; background: var(--light-color); border-radius: 10px;">
+              <h3 style="margin-bottom: 1rem;">No bookings found</h3>
+              <p style="color: var(--text-light); margin-bottom: 1.5rem;">You haven't made any bookings yet with this email address.</p>
+              <a href="booking.html" class="btn btn-primary">Make Your First Booking</a>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = bookings.map(booking => {
+          const packageInfo = packages.find(pkg => pkg.id === booking.packageId);
+          const packageName = packageInfo ? packageInfo.name : `Package #${booking.packageId}`;
+          const packageLocation = packageInfo ? packageInfo.location : 'Unknown Location';
+          const packagePrice = packageInfo ? packageInfo.price : 0;
+
+          const checkInDate = new Date(booking.checkIn);
+          const checkOutDate = new Date(booking.checkOut);
+          const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+          const totalPrice = packagePrice * nights;
+
+          return `
+            <div class="booking-card">
+              <div class="booking-header">
+                <div>
+                  <h3>${packageName}</h3>
+                  <p style="color: var(--text-light);">📍 ${packageLocation}</p>
+                </div>
+                <span class="booking-status confirmed">
+                  ${booking.status || 'Confirmed'}
+                </span>
+              </div>
+              <div class="booking-details">
+                <div class="booking-detail">
+                  <strong>Booking ID</strong>
+                  <span>#${booking.id}</span>
+                </div>
+                <div class="booking-detail">
+                  <strong>Guest Name</strong>
+                  <span>${booking.name}</span>
+                </div>
+                <div class="booking-detail">
+                  <strong>Check-in</strong>
+                  <span>${formatDate(booking.checkIn)}</span>
+                </div>
+                <div class="booking-detail">
+                  <strong>Check-out</strong>
+                  <span>${formatDate(booking.checkOut)}</span>
+                </div>
+                <div class="booking-detail">
+                  <strong>Guests</strong>
+                  <span>${booking.guests} ${booking.guests === 1 ? 'guest' : 'guests'}</span>
+                </div>
+                <div class="booking-detail">
+                  <strong>Total Nights</strong>
+                  <span>${nights} ${nights === 1 ? 'night' : 'nights'}</span>
+                </div>
+                <div class="booking-detail">
+                  <strong>Total Price</strong>
+                  <span style="font-size: 1.2rem; color: var(--primary-color); font-weight: bold;">${formatCurrency(totalPrice)}</span>
+                </div>
+                <div class="booking-detail">
+                  <strong>Booked On</strong>
+                  <span>${formatDate(booking.bookingDate)}</span>
+                </div>
+              </div>
+              ${booking.specialRequests ? `
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                  <strong>Special Requests:</strong>
+                  <p style="color: var(--text-light); margin-top: 0.5rem;">${booking.specialRequests}</p>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem; background: #fee; border-radius: 10px; color: var(--danger-color);">
+            <h3>Error Loading Bookings</h3>
+            <p>Unable to load your bookings. Please try again later.</p>
+          </div>
+        `;
+        showToast('Error loading bookings', 'error');
+        console.error('Error:', error);
+      }
+    }
+
+    // Show email input or bookings based on URL
+    function initializePage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const emailParam = urlParams.get('email');
+
+      if (emailParam) {
+        currentEmail = emailParam;
+        document.getElementById('emailInputSection').style.display = 'none';
+        document.getElementById('bookingsSection').style.display = 'block';
+        document.getElementById('bookingsEmail').textContent = `Email: ${currentEmail}`;
+        loadPackages().then(() => loadBookings(currentEmail));
+      } else {
+        document.getElementById('emailInputSection').style.display = 'block';
+        document.getElementById('bookingsSection').style.display = 'none';
+      }
+    }
+
+    // Handle email form submission
+    document.getElementById('emailForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('userEmail').value.trim();
+      
+      if (email) {
+        window.location.href = `dashboard.html?email=${encodeURIComponent(email)}`;
+      }
+    });
+
+    // Change email function
+    window.changeEmail = function() {
+      window.location.href = 'dashboard.html';
+    };
+
+    // Initialize
+    initializePage();
+  </script>
+</body>
+</html>
